@@ -32,11 +32,18 @@ INCLUDES	:= $(shell find $(wildcard include) -type d)
 DATA		:=
 MUSIC		:= music
 GRAPHICS	:= graphics
+
 CSV_DIR		:= data
 CSV_FILES	:= $(wildcard $(CSV_DIR)/*.csv)
 CSV_SFILES	:= $(patsubst $(CSV_DIR)/%.csv,$(BUILD)/%.s,$(CSV_FILES))
 CSV_HFILES	:= $(patsubst $(CSV_DIR)/%.csv,$(BUILD)/%.h,$(CSV_FILES))
 CSV_READER	:= csv_reader.exe
+
+CHARTS		:= charts
+CHART_FILES	:= $(wildcard $(CHARTS)/*.chart)
+CHART_SFILES	:= $(patsubst $(CHARTS)/%.chart,$(BUILD)/%.s,$(CHART_FILES))
+CHART_HFILES	:= $(patsubst $(CHARTS)/%.chart,$(BUILD)/%.h,$(CHART_FILES))
+CHART_READER	:= chart_reader.exe
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -87,7 +94,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s))) $(notdir $(CSV_SFILES))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s))) $(notdir $(CSV_SFILES)) $(notdir $(CHART_SFILES))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 
@@ -129,7 +136,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 .PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
-$(BUILD): $(CSV_SFILES) $(CSV_HFILES)
+$(BUILD): $(CSV_SFILES) $(CSV_HFILES) $(CHART_SFILES) $(CHART_HFILES)
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
@@ -161,6 +168,15 @@ $(BUILD)/%.s $(BUILD)/%.h : $(CSV_DIR)/%.csv
 	@$(CSV_READER) $(CURDIR)/$<
 
 #---------------------------------------------------------------------------------
+# CHART processing rules (parent directory)
+#---------------------------------------------------------------------------------
+$(BUILD)/%.s $(BUILD)/%.h : $(CHARTS)/%.chart
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	@echo "chart_reader $(notdir $<)"
+	@$(CHART_READER) $(CURDIR)/$<
+
+
+#---------------------------------------------------------------------------------
 else
 
 #---------------------------------------------------------------------------------
@@ -171,7 +187,7 @@ $(OUTPUT).gba	:	$(OUTPUT).elf
 
 $(OUTPUT).elf	:	$(OFILES)
 
-$(OFILES_SOURCES) : $(HFILES) $(CSV_HFILES)
+$(OFILES_SOURCES) : $(HFILES) $(CSV_HFILES) $(CHART_HFILES)
 
 #---------------------------------------------------------------------------------
 # The bin2o rule should be copied and modified
