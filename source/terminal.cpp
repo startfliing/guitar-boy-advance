@@ -6,7 +6,7 @@
 #define IS_TEXT_SCROLL_ENABLED false
 
 #define TERMINAL_TEXT_WIDTH 28
-#define TERMINAL_TEXT_HEIGHT 18
+#define TERMINAL_TEXT_HEIGHT 4
 
 #define TERMINAL_TOP_ROW 1
 #define TERMINAL_LEFT_COL 1
@@ -30,7 +30,7 @@ u16 Terminal::setCNT(u8 bg, u16 cbb, u16 sbb){
     reset();
     
     //These could be added to the function parameters if you call for it
-    return BG_BUILD(cbb,sbb,0,0,0,0,1);
+    return BG_BUILD(cbb,sbb,0,0,3,0,1);
 }
 
 // reset line, clear the whole screen, and reset offset
@@ -114,6 +114,42 @@ void Terminal::drawVal(int val){
 
 //cool use of recursion and function overloading
 void Terminal::drawVal(long int val){
+    //draw a negative sign but only once
+    if(val < 0){
+        drawVal('-');
+        val = val * -1;
+    }
+
+    //if value is greater than 9
+    if(val > 9){
+        //recurse
+        drawVal(val/10);
+    }
+
+    //base case, sorta
+    drawVal(intToChar(val%10));
+}
+
+//cool use of recursion and function overloading
+void Terminal::drawVal(uint32_t val){
+    //draw a negative sign but only once
+    if(val < 0){
+        drawVal('-');
+        val = val * -1;
+    }
+
+    //if value is greater than 9
+    if(val > 9){
+        //recurse
+        drawVal(val/10);
+    }
+
+    //base case, sorta
+    drawVal(intToChar(val%10));
+}
+
+//cool use of recursion and function overloading
+void Terminal::drawVal(uint16_t val){
     //draw a negative sign but only once
     if(val < 0){
         drawVal('-');

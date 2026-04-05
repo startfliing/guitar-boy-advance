@@ -115,7 +115,7 @@ void input_game()
 	m7_translate_level(cam, &dir);
 
     if(key_hit(KEY_START)){
-        Terminal::log("%%,%%", cam->phi, cam->theta);
+        Terminal::log("%%,%%", cam->pos.z, cam->pos.x);
     }
 
 }
@@ -135,16 +135,16 @@ int main(){
     //load image
     memcpy16(&se_mem[24], imageMap, imageMapLen/2);
 
-	memcpy16(&pal_bg_mem[16], rainbowPal, rainbowPalLen/2);
-	LZ77UnCompVram(rainbowTiles, tile_mem[0]); 
-	for(int i = 0; i < 1024; i++){
-		memset16(&se_mem[31][i], ((u16*)(rainbowMap))[i] | SE_PALBANK(1), 1);
-	}
+	//memcpy16(&pal_bg_mem[16], rainbowPal, rainbowPalLen/2);
+	//LZ77UnCompVram(rainbowTiles, tile_mem[0]); 
+	//for(int i = 0; i < 1024; i++){
+	//	memset16(&se_mem[31][i], ((u16*)(rainbowMap))[i] | SE_PALBANK(1), 1);
+	//}
 
-	REG_BG1CNT = BG_BUILD(0, 31, 0, 0, 3, 0, 0);
+	//REG_BG1CNT = BG_BUILD(0, 31, 0, 0, 3, 0, 0);
     //enable Text BG
-    REG_BG0CNT = Terminal::setCNT(1, 1, 30);
-    REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_MODE1;
+    REG_BG1CNT = Terminal::setCNT(1, 0, 31);
+    REG_DISPCNT = DCNT_BG1 | DCNT_BG2 | DCNT_MODE1;
 
     // Initialize Interrupts
     irq_init(nullptr);
