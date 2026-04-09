@@ -10,6 +10,7 @@
 #include "soundbank.h"
 #include "soundbank_bin.h"
 
+#include "careless.h"
 
 #define CONTROLS_ENABLED false
 
@@ -41,7 +42,7 @@ void m7_rotate(M7_CAM *cam, int phi, int theta)
 }
 
 M7_CAM m7_cam_default ={
-	{ 0x0FFFF, 0x4900, 0x38800 },
+	{ 0x0FFFF, 0x4900, 0x7FFFFFFF },
 	0x9C0, 0x000,
 	{ 256, 0, 0 }, {0, 256, 0}, {0, 0, 256}
 }; 
@@ -94,9 +95,12 @@ void m7_translate_level(M7_CAM *cam, const VECTOR *dir)
 	cam->pos.z += (cam->u.z * dir->x + cam->u.x * dir->z)>>8;
 }
 
+FIXED VEL_H = careless_BPM;
+FIXED curr_z = 0x7FFFFFFF;
+
 void input_game()
 {
-	const FIXED VEL_H= 0x200, OMEGA= 0x140;
+	const FIXED OMEGA= 0x140;
 	VECTOR dir= {0, 0, 0};
 	M7_CAM *cam= m7_level.camera;
 
@@ -107,16 +111,13 @@ void input_game()
 		m7_rotate(cam,
 			cam->phi,	// look left/right
 			cam->theta - OMEGA*key_tri_vert());	// look up.down
+
+		m7_translate_level(cam, &dir);
 	}else{
-		dir.z= -VEL_H;
+		curr_z -= VEL_H;
+		//crazy equation to balance tempo and highway speed
+		cam->pos.z = ((cam->u.x * (curr_z/871)) - 700000)>>4;
 	}
-
-	
-	m7_translate_level(cam, &dir);
-
-    if(key_hit(KEY_START)){
-        Terminal::log("%%,%%", cam->pos.z, cam->pos.x);
-    }
 
 }
 
@@ -159,7 +160,7 @@ int main(){
     
     //Setup is done. Lets put it into action!
     Terminal::log("Hello World!");
-    mmStart( MOD_FLATOUTLIES, MM_PLAY_ONCE );
+    mmStart( MOD_CARELESS_WHISPER, MM_PLAY_LOOP );
 
     while(1){
         input_game();

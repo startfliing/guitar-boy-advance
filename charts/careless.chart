@@ -1,0 +1,26 @@
+﻿[Song]
+{
+  Offset = 0
+  Resolution = 192
+  Player2 = bass
+  Difficulty = 0
+  PreviewStart = 0
+  PreviewEnd = 0
+  Genre = "rock"
+  MediaType = "cd"
+  MusicStream = "careless_whisper.mp3"
+}
+[SyncTrack]
+{
+  0 = TS 4
+  0 = B 83300
+}
+[Events]
+{
+}
+[ExpertSingle]
+{
+  240 = N 1 0
+  336 = N 3 0
+  480 = N 1 0
+}
