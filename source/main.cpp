@@ -6,11 +6,12 @@
 #include "mode7.hpp"
 
 #include "image.h"
-#include "rainbow.h"
+#include "palette.h"
 #include "soundbank.h"
 #include "soundbank_bin.h"
 
 #include "careless.h"
+#include "buttons.h"
 
 #define CONTROLS_ENABLED false
 
@@ -121,6 +122,46 @@ void input_game()
 
 }
 
+//green button 	(3, 16)
+//red button 	(9, 16)
+//yellow button (15, 16)
+//blue button 	(21, 16)
+void drawButton(int b, bool active){
+	int palette = b+1;
+	int start_x = (b*6)+3;
+	int start_ind = 32*15 + start_x;
+	//y
+	for(int i = 0; i < 3; i++){
+		int row_start = start_ind + (i*32);
+		//x
+		for(int j = 0; j < 6; j++){
+			u16 map_start = active ? buttonsMap[(i*6)+j] + 18 : buttonsMap[(i*6)+j];
+			se_mem[30][row_start+j] = map_start | SE_PALBANK(palette);
+		}
+
+	}
+}
+
+void drawButtons(){
+	//iterate through buttons
+	for(int b = 0; b < 4; b++){
+		drawButton(b, false);
+	}
+}
+
+void updateButtons(u16 hit, u16 released){
+	u16 buttons[4] = {KEY_L, KEY_B, KEY_A, KEY_R};
+	for(int i = 0; i < 4; i ++){
+		if( buttons[i] & hit ){
+			drawButton(i, true);
+		}
+
+		if( buttons[i] & released ){
+			drawButton(i, false);
+		}
+	}
+}
+
 int main(){
 
     // Init mode 7
@@ -128,7 +169,7 @@ int main(){
 		BG_CBB(2) | BG_SBB(24) | BG_AFF_64x64 | BG_WRAP | BG_PRIO(2));
 
     //load palette
-    memcpy16(pal_bg_mem, imagePal, imagePalLen/2);
+    memcpy16(pal_bg_mem, palettePal, palettePalLen/2);
 
     //load tiles
     LZ77UnCompVram(imageTiles, tile_mem[2]);
@@ -136,16 +177,13 @@ int main(){
     //load image
     memcpy16(&se_mem[24], imageMap, imageMapLen/2);
 
-	//memcpy16(&pal_bg_mem[16], rainbowPal, rainbowPalLen/2);
-	//LZ77UnCompVram(rainbowTiles, tile_mem[0]); 
-	//for(int i = 0; i < 1024; i++){
-	//	memset16(&se_mem[31][i], ((u16*)(rainbowMap))[i] | SE_PALBANK(1), 1);
-	//}
+	memcpy16(&tile_mem[1], buttonsTiles, buttonsTilesLen/2);
+	drawButtons();
 
-	//REG_BG1CNT = BG_BUILD(0, 31, 0, 0, 3, 0, 0);
+	REG_BG0CNT = BG_BUILD(1, 30, 0, 0, 0, 0, 0);
     //enable Text BG
     REG_BG1CNT = Terminal::setCNT(1, 0, 31);
-    REG_DISPCNT = DCNT_BG1 | DCNT_BG2 | DCNT_MODE1;
+    REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_MODE1;
 
     // Initialize Interrupts
     irq_init(nullptr);
@@ -170,6 +208,11 @@ int main(){
 
 		//update_sprites();
 		m7_prep_affines(&m7_level);
+		u16 buttons_hit = key_hit(KEY_L | KEY_A | KEY_B | KEY_R);
+		u16 buttons_released = key_released(KEY_L | KEY_A | KEY_B | KEY_R);
+		updateButtons(buttons_hit, buttons_released);
+
+		if(key_hit(KEY_START)) Terminal::log("Tick = %%", m7_level.camera->pos.z);
 
         //update song
         mmFrame();
