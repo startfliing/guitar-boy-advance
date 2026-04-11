@@ -20,6 +20,7 @@ u16 Terminal::text_cbb = 0;
 u8 Terminal::bg_ind = 0;
 font Terminal::text_font(textTiles, textWidths);
 bool Terminal::need_new_line = true;
+bool Terminal::enabled = false;
 
 //set control flags for bg
 u16 Terminal::setCNT(u8 bg, u16 cbb, u16 sbb){
@@ -28,7 +29,7 @@ u16 Terminal::setCNT(u8 bg, u16 cbb, u16 sbb){
     text_cbb = cbb;
 
     reset();
-    
+    enabled = true;
     //These could be added to the function parameters if you call for it
     return BG_BUILD(cbb,sbb,0,0,3,0,1);
 }

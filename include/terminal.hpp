@@ -13,6 +13,7 @@ class Terminal{
         static void eraseLine();
 
         static void log(const char* word){
+            if(!enabled) return;
             if(need_new_line){
                 advanceOneLine();
                 need_new_line = false;
@@ -28,6 +29,7 @@ class Terminal{
 
         template <typename T, typename... Args>
         static void log(const char* word, T val, Args... args){
+            if(!enabled) return;
             if(need_new_line){
                 advanceOneLine();
                 need_new_line = false;
@@ -70,6 +72,7 @@ class Terminal{
         static u16 curr_tile_num;
         static u8 curr_pixel_num;
         static bool need_new_line;
+        static bool enabled;
 
         //For DCNT_BG$(0-3)
         static u8 bg_ind;
