@@ -57,6 +57,7 @@ class Terminal{
         static void loadTile(char c, int vram_tile_ind);
         static void drawVal(int val);
         static void drawVal(long int val);
+        static void drawVal(u64 val);
         static void drawVal(uint32_t val);
         static void drawVal(uint16_t val);
         static void drawVal(char c);

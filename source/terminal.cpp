@@ -131,6 +131,24 @@ void Terminal::drawVal(long int val){
 }
 
 //cool use of recursion and function overloading
+void Terminal::drawVal(u64 val){
+    //draw a negative sign but only once
+    if(val < 0){
+        drawVal('-');
+        val = val * -1;
+    }
+
+    //if value is greater than 9
+    if(val > 9){
+        //recurse
+        drawVal(val/10);
+    }
+
+    //base case, sorta
+    drawVal(intToChar(val%10));
+}
+
+//cool use of recursion and function overloading
 void Terminal::drawVal(uint32_t val){
     //draw a negative sign but only once
     if(val < 0){
