@@ -56,7 +56,24 @@ typedef struct M7_LEVEL
 } M7_LEVEL;
 
 extern M7_LEVEL m7_level;
+extern M7_CAM m7_cam_default;
 
+extern M7_CAM m7_cam;
+extern BG_AFFINE m7_bgaffs[SCREEN_HEIGHT+1];
+extern M7_SPRITE m7_sprites[32];
+
+extern M7_LEVEL m7_level;
+
+void m7_rotate(M7_CAM *cam, int phi, int theta);
+void m7_prep_horizon(M7_LEVEL *level);
+void m7_update_sky(const M7_LEVEL *level);
+void m7_init(M7_LEVEL *level, M7_CAM *cam, BG_AFFINE bgaff[],
+	M7_SPRITE sprites[], u16 floorcnt);
+void m7_translate_level(M7_CAM *cam, const VECTOR *dir);
+
+extern "C" {
+    void id_sort_shell(int keys[], uint8_t ids[], int count);
+}
 INLINE int m7_horizon_line(const M7_LEVEL *level);
 
 // IWRAM functions
