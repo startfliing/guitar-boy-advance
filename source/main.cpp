@@ -15,10 +15,15 @@
 #include "careless.h"
 #include "buttons.h"
 
+#define CONTROLS_ENABLED false
+#define BLENDING true
+
 NoteManager<careless_expertsingle_count>* nm = new NoteManager<careless_expertsingle_count>(
 	careless_expertsingle_data,
 	careless_BPM
 );
+
+FIXED VEL_H = CONTROLS_ENABLED ? 0x200 : careless_BPM;
 
 //SPRITES WILL MOVE TO NEW FILE LATER, JUST PUTTING THEM HERE FOR NOW
 
@@ -104,10 +109,6 @@ void init_sprites()
 
 //------------------------------------------
 
-#define CONTROLS_ENABLED false
-#define BLENDING true
-
-FIXED VEL_H = CONTROLS_ENABLED ? 0x200 : careless_BPM;
 FIXED curr_z = 0;
 
 void input_game()
