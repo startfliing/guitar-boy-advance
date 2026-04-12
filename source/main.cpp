@@ -4,6 +4,8 @@
 
 #include "terminal.hpp"
 #include "mode7.hpp"
+#include "noteManager.hpp"
+#include "notes.h"
 
 #include "image.h"
 #include "palette.h"
@@ -13,91 +15,100 @@
 #include "careless.h"
 #include "buttons.h"
 
-#define CONTROLS_ENABLED false
+NoteManager<careless_expertsingle_count>* nm = new NoteManager<careless_expertsingle_count>(
+	careless_expertsingle_data,
+	careless_BPM
+);
 
-void m7_rotate(M7_CAM *cam, int phi, int theta)
+//SPRITES WILL MOVE TO NEW FILE LATER, JUST PUTTING THEM HERE FOR NOW
+
+#define SPR_COUNT	32
+
+u8 sort_ids[SPR_COUNT];
+int sort_keys[SPR_COUNT];
+
+//LANE POSITIONS
+//m7_level.camera->pos.z - 25000
+//{ 0x0E300, 0x0000, -196632/*0x25682FA*/ }, 	// Mario
+//{ 0x0F400, 0x0000, -328280 }, 	// Luigi
+//{ 0x10400, 0x0000, -459928 }, 	// Princess
+//{ 0x11600, 0x0000, -591576 }, 	// Yoshi
+
+
+int first_sprite = SPR_COUNT;
+int recent_sprite = 0;
+
+void init_sprite(int ii, noteSprite sprite){
+	M7_SPRITE *spr= &m7_level.sprites[ii];
+	spr->pos= sprite.pos;
+	spr->anchor.x= 16;
+	spr->anchor.y= 30;
+	obj_set_attr(&spr->obj, 
+		ATTR0_SQUARE | ATTR0_AFF_DBL | ATTR0_BLEND,
+		ATTR1_SIZE_64x32 | ATTR1_AFF_ID(ii), 
+		ATTR2_ID(1) | ATTR2_PRIO(2) | ATTR2_PALBANK(sprite.pal));
+
+	spr->obj_id= ii;
+	spr->aff_id= ii;
+	spr->tiles= (TILE*)notesTiles;
+	//Terminal::log("Init sprite %% at z: %%", ii, spr->pos.z);
+};
+
+void update_sprites()
 {
-	theta= clamp(theta, -0x3FFF, 0x4001);
-	cam->phi= phi;
-	cam->theta= theta;
+	int ii;
 
-	FIXED cf, sf, ct, st;
+	M7_SPRITE *spr= m7_level.sprites;
 
-	cf= lu_cos(phi)>>4;		sf= lu_sin(phi)>>4;
-	ct= lu_cos(theta)>>4;	st= lu_sin(theta)>>4;
-
-	// camera X-axis (right)
-	cam->u.x= cf;
-	cam->u.y= 0;
-	cam->u.z= sf;
-
-	// camera Y-axis (up)
-	cam->v.x= sf*st>>8;
-	cam->v.y= ct;
-	cam->v.z= -cf*st>>8;
-
-	// camera Z-axis (back)
-	cam->w.x= -sf*ct>>8;
-	cam->w.y= st;
-	cam->w.z= cf*ct>>8;
-}
-
-M7_CAM m7_cam_default ={
-	{ 0x0FFFF, 0x4900, 0x7FFFFFFF },
-	0x9C0, 0x000,
-	{ 256, 0, 0 }, {0, 256, 0}, {0, 0, 256}
-}; 
-
-void m7_prep_horizon(M7_LEVEL *level){
-	int horz;
-	M7_CAM *cam= level->camera;
-
-	if(cam->v.y != 0)
-	{
-		horz= M7_FAR_BG*cam->w.y - cam->pos.y;
-		horz= M7_TOP - Div(horz*M7_D, M7_FAR_BG*cam->v.y);
+	//check the next 22 sprites,
+	if(first_sprite != recent_sprite+SPR_COUNT-2){
+		noteSprite* positions = nm->getNoteSprites();
+		for(ii=first_sprite; ii<recent_sprite+SPR_COUNT-2; ii++){
+			init_sprite(ii%SPR_COUNT, positions[ii]);
+		}
+		first_sprite = recent_sprite;
 	}
-	else horz= cam->w.y > 0 ? INT_MIN : INT_MAX;
 
-	level->horizon= horz;
+	for(ii=0; ii<SPR_COUNT; ii++)
+	{
+		m7_prep_sprite(&m7_level, &spr[ii]);
+
+		// Create sort key
+		if(BFN_GET2(spr[ii].obj.attr0, ATTR0_MODE) != ATTR0_HIDE){
+			sort_keys[ii]= spr[ii].pos2.z;
+		} else
+			sort_keys[ii]= INT_MAX;
+	}
+
+	id_sort_shell(sort_keys, sort_ids, SPR_COUNT);
+
+	// Update real OAM
+	for(ii=0; ii<SPR_COUNT; ii++)
+		obj_copy(&oam_mem[ii], &spr[sort_ids[ii]].obj, 1);
 }
 
-void m7_update_sky(const M7_LEVEL *level)
+void init_sprites()
 {
-	REG_BG2HOFS= (level->camera->phi>>6)+M7_LEFT;
-	REG_BG2VOFS= -m7_horizon_line(level)-1;
+	int ii;
+	noteSprite* pos = nm->getNoteSprites();
+	// Notes
+	for(ii=0; ii<SPR_COUNT; ii++)
+	{
+		init_sprite(ii, pos[ii]);
+	}
+
+	// Setup sorting list
+	for(ii=0; ii<SPR_COUNT; ii++)
+		sort_ids[ii]= ii;
 }
 
-void m7_init(M7_LEVEL *level, M7_CAM *cam, BG_AFFINE bgaff[],
-	M7_SPRITE sprites[], u16 floorcnt)
-{
-	level->camera= cam;
-	level->bgaff= bgaff;
-	level->sprites= sprites;
-	level->bgcnt_floor= floorcnt;
-	level->horizon= 80;
+//------------------------------------------
 
-    m7_rotate(cam, cam->phi, cam->theta);
+#define CONTROLS_ENABLED false
+#define BLENDING true
 
-	REG_BG2CNT= floorcnt;
-	REG_BG_AFFINE[2]= bg_aff_default;
-}
-
-M7_CAM m7_cam;
-BG_AFFINE m7_bgaffs[SCREEN_HEIGHT+1];
-M7_SPRITE m7_sprites[24];
-
-M7_LEVEL m7_level;
-
-void m7_translate_level(M7_CAM *cam, const VECTOR *dir)
-{
-	cam->pos.x += (cam->u.x * dir->x - cam->u.z * dir->z)>>8;
-	cam->pos.y += dir->y;
-	cam->pos.z += (cam->u.z * dir->x + cam->u.x * dir->z)>>8;
-}
-
-FIXED VEL_H = careless_BPM;
-FIXED curr_z = 0x7FFFFFFF;
+FIXED VEL_H = CONTROLS_ENABLED ? 0x200 : careless_BPM;
+FIXED curr_z = 0;
 
 void input_game()
 {
@@ -107,17 +118,18 @@ void input_game()
 
 	if(CONTROLS_ENABLED){
 		dir.z= -VEL_H*key_tri_fire();	// B/A : back/forward
+		dir.x= VEL_H*key_tri_shoulder();	// strafe
 
 		// Change camera orientation
 		m7_rotate(cam,
-			cam->phi,	// look left/right
+			cam->phi + OMEGA*key_tri_horz(),	// look left/right
 			cam->theta - OMEGA*key_tri_vert());	// look up.down
 
 		m7_translate_level(cam, &dir);
 	}else{
-		curr_z -= VEL_H;
+		curr_z += VEL_H;
 		//crazy equation to balance tempo and highway speed
-		cam->pos.z = ((cam->u.x * (curr_z/871)) - 700000)>>4;
+		cam->pos.z = ((cam->u.x * (-curr_z/871)) - 640000)>>4;
 	}
 
 }
@@ -129,7 +141,7 @@ void input_game()
 void drawButton(int b, bool active){
 	int palette = b+1;
 	int start_x = (b*6)+3;
-	int start_ind = 32*15 + start_x;
+	int start_ind = 32*13 + start_x;
 	//y
 	for(int i = 0; i < 3; i++){
 		int row_start = start_ind + (i*32);
@@ -162,6 +174,11 @@ void updateButtons(u16 hit, u16 released){
 	}
 }
 
+void update(){
+	mmVBlank();
+	recent_sprite = nm->update();
+}
+
 int main(){
 
     // Init mode 7
@@ -180,16 +197,31 @@ int main(){
 	memcpy16(&tile_mem[1], buttonsTiles, buttonsTilesLen/2);
 	drawButtons();
 
-	REG_BG0CNT = BG_BUILD(1, 30, 0, 0, 0, 0, 0);
-    //enable Text BG
-    REG_BG1CNT = Terminal::setCNT(1, 0, 31);
-    REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_MODE1;
+	if(BLENDING){
+		memset16(&se_mem[31], 0x0001, 32*32);
+		memset16(&tile_mem[0][1], 0x6666, 16);
+		memset16(&tile_mem[1][0x4F], 0x6666, 16);
+		memset16(&se_mem[30], 0x004F, 32*3);
+		REG_BLDCNT= BLD_BUILD(BLD_BG1, BLD_OBJ | BLD_BG2, 1);
+	}
+	
 
+	REG_BG0CNT = BG_BUILD(1, 30, 0, 0, 0, 0, 0);
+	
+    //enable Text BG
+    REG_BG1CNT = BLENDING ? BG_BUILD(0, 31, 0, 0, 0, 0, 0) : Terminal::setCNT(1, 0, 31);
+    REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_OBJ | DCNT_OBJ_1D | DCNT_MODE1;
+
+	memcpy16(pal_obj_mem, palettePal, palettePalLen/2);
+	memcpy16(tile_mem_obj, notesTiles, notesTilesLen/2);
+
+	oam_init(obj_mem, 128);
+	init_sprites();
     // Initialize Interrupts
     irq_init(nullptr);
 
 	// Maxmod requires the vblank interrupt to reset sound DMA. 
-	irq_set( II_VBLANK, mmVBlank, 0);
+	irq_set( II_VBLANK, update, 0);
     irq_add(II_HBLANK, (fnptr)m7_hbl_floor);
 	irq_enable(II_VBLANK);
 
@@ -197,7 +229,7 @@ int main(){
     mmInitDefault( (mm_addr)soundbank_bin, 16 );
     
     //Setup is done. Lets put it into action!
-    Terminal::log("Hello World!");
+    //Terminal::log("Hello World! %%", careless_expertsingle_data[0].tick);
     mmStart( MOD_CARELESS_WHISPER, MM_PLAY_LOOP );
 
     while(1){
@@ -206,13 +238,15 @@ int main(){
         m7_prep_horizon(&m7_level);
 		m7_update_sky(&m7_level);
 
-		//update_sprites();
+		update_sprites();
 		m7_prep_affines(&m7_level);
+
 		u16 buttons_hit = key_hit(KEY_L | KEY_A | KEY_B | KEY_R);
 		u16 buttons_released = key_released(KEY_L | KEY_A | KEY_B | KEY_R);
+		u16 buttons_down = key_is_down(KEY_L | KEY_A | KEY_B | KEY_R);
 		updateButtons(buttons_hit, buttons_released);
 
-		if(key_hit(KEY_START)) Terminal::log("Tick = %%", m7_level.camera->pos.z);
+		//if(key_hit(KEY_START)) Terminal::log("Tick = %%", m7_level.camera->pos.z);
 
         //update song
         mmFrame();

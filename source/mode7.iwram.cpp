@@ -30,14 +30,9 @@ IWRAM_CODE void m7_hbl_floor()
 	BG_AFFINE *bga= &m7_level.bgaff[vc+1];
 	REG_BG_AFFINE[2] = *bga;
 
-	// A distance fogging with high marks for hack-value
-	// Remember that we used pb to store the scale in,
-	// so the blend is basically lambda/64 = distance * 2
-	// which will do nicely
-	u32 ey= bga->pb*6>>12;
-	if(ey>16)
-		ey= 16;
 
+	//use horizon to blend in obj and backgrounds
+	u32 ey = clamp((vc - horz), 0, 16);
 	REG_BLDALPHA= BLDA_BUILD(16-ey, ey);
 }
 
@@ -106,7 +101,7 @@ IWRAM_CODE void m7_prep_sprite(M7_LEVEL *level, M7_SPRITE *spr)
 	// --- Check with viewbox ---
 	do
 	{
-		if(M7_NEAR*256 > vc.z || vc.z > M7_FAR*256)
+		if(M7_NEAR*256 > vc.z || vc.z > M7_FAR*300)
 			break;
 
 		rect.left= vc.x - spr->anchor.x*(256>>M7O_NORM);
