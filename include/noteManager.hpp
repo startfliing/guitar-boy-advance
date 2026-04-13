@@ -29,11 +29,11 @@ class NoteManager{
 
         int update() {
             //right before hit window, set up what lanes should we expect the player to hit
-            if(current_tick >= song_notes[current_note_index].tick - (song_bpm * 4)){ 
+            if(current_tick >= song_notes[current_note_index].tick - (song_bpm * 3)){ 
                 u16 note_lanes = 0;
                 note_check = current_note_index;
                 //iterate through all notes that should be spawned at this tick
-                while(current_tick >= song_notes[current_note_index].tick - (song_bpm * 4)){
+                while(current_tick >= song_notes[current_note_index].tick - (song_bpm * 3)){
                     //Terminal::log("Note %% hit box, z: %%", current_note_index, note_sprites[current_note_index].pos.z);
                     // Move to the next note in the song
                     switch(song_notes[current_note_index].lane){
