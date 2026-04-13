@@ -244,7 +244,12 @@ int main(){
 
 		u16 buttons_hit = key_hit(KEY_L | KEY_A | KEY_B | KEY_R);
 		u16 buttons_released = key_released(KEY_L | KEY_A | KEY_B | KEY_R);
-		u16 buttons_down = key_is_down(KEY_L | KEY_A | KEY_B | KEY_R);
+		if(buttons_hit){
+			int note_hit = nm->checkHit(buttons_hit);
+			if(note_hit != -1){
+				m7_level.sprites[note_hit%SPR_COUNT].obj.attr2 = (m7_level.sprites[note_hit%SPR_COUNT].obj.attr2 & ~ATTR2_ID_MASK) | ATTR2_ID(65);
+			}
+		}
 		updateButtons(buttons_hit, buttons_released);
 
 		//if(key_hit(KEY_START)) Terminal::log("Tick = %%", m7_level.camera->pos.z);
