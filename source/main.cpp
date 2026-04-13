@@ -5,6 +5,7 @@
 #include "terminal.hpp"
 #include "mode7.hpp"
 #include "noteManager.hpp"
+#include "sprite.hpp"
 #include "notes.h"
 
 #include "image.h"
@@ -25,90 +26,6 @@ NoteManager<careless_expertsingle_count>* nm = new NoteManager<careless_expertsi
 );
 
 FIXED VEL_H = CONTROLS_ENABLED ? 0x200 : careless_BPM;
-
-//SPRITES WILL MOVE TO NEW FILE LATER, JUST PUTTING THEM HERE FOR NOW
-
-#define SPR_COUNT	32
-
-u8 sort_ids[SPR_COUNT];
-int sort_keys[SPR_COUNT];
-
-//LANE POSITIONS
-//m7_level.camera->pos.z - 25000
-//{ 0x0E300, 0x0000, -196632/*0x25682FA*/ }, 	// Mario
-//{ 0x0F400, 0x0000, -328280 }, 	// Luigi
-//{ 0x10400, 0x0000, -459928 }, 	// Princess
-//{ 0x11600, 0x0000, -591576 }, 	// Yoshi
-
-
-int first_sprite = SPR_COUNT;
-int recent_sprite = 0;
-
-void init_sprite(int ii, noteSprite sprite){
-	M7_SPRITE *spr= &m7_level.sprites[ii];
-	spr->pos= sprite.pos;
-	spr->anchor.x= 16;
-	spr->anchor.y= 30;
-	obj_set_attr(&spr->obj, 
-		ATTR0_SQUARE | ATTR0_AFF_DBL | ATTR0_BLEND,
-		ATTR1_SIZE_64x32 | ATTR1_AFF_ID(ii), 
-		ATTR2_ID(1) | ATTR2_PRIO(2) | ATTR2_PALBANK(sprite.pal));
-
-	spr->obj_id= ii;
-	spr->aff_id= ii;
-	spr->tiles= (TILE*)notesTiles;
-	//Terminal::log("Init sprite %% at z: %%", ii, spr->pos.z);
-};
-
-void update_sprites()
-{
-	int ii;
-
-	M7_SPRITE *spr= m7_level.sprites;
-
-	//check the next 22 sprites,
-	if(first_sprite != recent_sprite+SPR_COUNT-2){
-		noteSprite* positions = nm->getNoteSprites();
-		for(ii=first_sprite; ii<recent_sprite+SPR_COUNT-2; ii++){
-			init_sprite(ii%SPR_COUNT, positions[ii]);
-		}
-		first_sprite = recent_sprite;
-	}
-
-	for(ii=0; ii<SPR_COUNT; ii++)
-	{
-		m7_prep_sprite(&m7_level, &spr[ii]);
-
-		// Create sort key
-		if(BFN_GET2(spr[ii].obj.attr0, ATTR0_MODE) != ATTR0_HIDE){
-			sort_keys[ii]= spr[ii].pos2.z;
-		} else
-			sort_keys[ii]= INT_MAX;
-	}
-
-	id_sort_shell(sort_keys, sort_ids, SPR_COUNT);
-
-	// Update real OAM
-	for(ii=0; ii<SPR_COUNT; ii++)
-		obj_copy(&oam_mem[ii], &spr[sort_ids[ii]].obj, 1);
-}
-
-void init_sprites()
-{
-	int ii;
-	noteSprite* pos = nm->getNoteSprites();
-	// Notes
-	for(ii=0; ii<SPR_COUNT; ii++)
-	{
-		init_sprite(ii, pos[ii]);
-	}
-
-	// Setup sorting list
-	for(ii=0; ii<SPR_COUNT; ii++)
-		sort_ids[ii]= ii;
-}
-
-//------------------------------------------
 
 FIXED curr_z = 0;
 
