@@ -3,6 +3,7 @@
 
 #include "tonc.h"
 #include "terminal.hpp"
+#include "textDisplay.hpp"
 #include "note.h"  // For struct Note definition
 
 struct noteSprite{
@@ -15,6 +16,7 @@ class NoteManager{
     public:
         NoteManager(const Note* song_notes, u32 song_bpm) {
             this->song_notes = song_notes;
+            this->td = new textDisplay(4, 4);
             this->note_ct = N;
             this->song_bpm = song_bpm; //minutes to seconds to frames
             this->current_tick = 0;
@@ -66,14 +68,14 @@ class NoteManager{
             if(current_tick >= song_notes[note_check].tick - (song_bpm * 3) && current_tick <= song_notes[note_check].tick + (song_bpm * 3)){
 
                 if(keys_hit == curr_note_lanes){
-                    //td->update("Hit!");
+                    td->update("Hit!");
                     return note_check; // Note hit successfully
                 }else{
-                    //td->update("Wrong Note!");
+                    td->update("Wrong Note!");
                 }
             } else {
                 s32 tick_diff = current_tick - song_notes[note_check].tick;
-                //td->update(tick_diff < 0 ? "Early!" : "Late!");
+                td->update(tick_diff < 0 ? "Early!" : "Late!");
             }
             return -1;
         }
@@ -109,6 +111,7 @@ class NoteManager{
         
         const Note* song_notes;
         noteSprite note_sprites[N];
+        textDisplay* td;
         u32 song_bpm;
         u32 note_ct;
         u64 current_tick;

@@ -12,6 +12,7 @@
 #include "soundbank.h"
 #include "soundbank_bin.h"
 
+#include "text_sprites.h"
 #include "careless.h"
 #include "buttons.h"
 
@@ -215,6 +216,7 @@ int main(){
 
 	memcpy16(pal_obj_mem, palettePal, palettePalLen/2);
 	memcpy16(tile_mem_obj, notesTiles, notesTilesLen/2);
+	memcpy16(&tile_mem_obj[1], text_spritesTiles, text_spritesTilesLen/2);
 
 	oam_init(obj_mem, 128);
 	init_sprites();
