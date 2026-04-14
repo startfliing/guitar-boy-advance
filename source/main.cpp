@@ -18,7 +18,6 @@
 #include "buttons.h"
 
 #define CONTROLS_ENABLED false
-#define BLENDING true
 
 NoteManager<careless_expertsingle_count>* nm = new NoteManager<careless_expertsingle_count>(
 	careless_expertsingle_data,
@@ -116,7 +115,7 @@ int main(){
 	memcpy16(&tile_mem[1], buttonsTiles, buttonsTilesLen/2);
 	drawButtons();
 
-	if(BLENDING){
+	if(ENABLED){
 		memset16(&se_mem[31], 0x0001, 32*32);
 		memset16(&tile_mem[0][1], 0x6666, 16);
 		memset16(&tile_mem[1][0x4F], 0x6666, 16);
@@ -128,7 +127,7 @@ int main(){
 	REG_BG0CNT = BG_BUILD(1, 30, 0, 0, 0, 0, 0);
 	
     //enable Text BG
-    REG_BG1CNT = BLENDING ? BG_BUILD(0, 31, 0, 0, 0, 0, 0) : Terminal::setCNT(1, 0, 31);
+    REG_BG1CNT = ENABLED ? BG_BUILD(0, 31, 0, 0, 0, 0, 0) : Terminal::setCNT(1, 0, 31);
     REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_OBJ | DCNT_OBJ_1D | DCNT_MODE1;
 
 	memcpy16(pal_obj_mem, palettePal, palettePalLen/2);
