@@ -39,12 +39,12 @@ class NoteManager{
 
         int update() {
             //right before hit window, set up what lanes should we expect the player to hit
-            if(current_tick >= song_notes[current_note_index].tick - (song_bpm * 3)){ 
+            if(current_tick >= song_notes[current_note_index].tick - (song_bpm * 10)){ 
                 u16 note_lanes = 0;
                 note_check = current_note_index;
                 //iterate through all notes that should be spawned at this tick
-                while(current_tick >= song_notes[current_note_index].tick - (song_bpm * 3)){
-                    //Terminal::log("Note %% hit box, z: %%", current_note_index, note_sprites[current_note_index].pos.z);
+                while(current_tick >= song_notes[current_note_index].tick - (song_bpm * 10)){
+                    //Terminal::log("UPPER Range of note %%", current_note_index);
                     // Move to the next note in the song
                     switch(song_notes[current_note_index].lane){
                         case 0:
@@ -75,7 +75,7 @@ class NoteManager{
         int checkHit(u32 keys_hit){
             //if within hit window of current note, check if correct button is pressed
             
-            if(current_tick >= song_notes[note_check].tick - (song_bpm * 3) && current_tick <= song_notes[note_check].tick + (song_bpm * 3)){
+            if(current_tick >= song_notes[note_check].tick - (song_bpm * 3) && current_tick <= song_notes[note_check].tick + (song_bpm * 5)){
 
                 if(keys_hit == curr_note_lanes){
                     if(ENABLED) percentage_text->update(++notes_hit, N);
