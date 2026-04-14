@@ -20,7 +20,7 @@ void init_sprite(int ii, noteSprite sprite){
 
 	spr->obj_id= ii;
 	spr->aff_id= ii;
-	spr->tiles= (TILE*)notesTiles;
+	spr->tiles = (TILE*)notesTiles;
 	//Terminal::log("Init sprite %% at z: %%", ii, spr->pos.z);
 };
 
