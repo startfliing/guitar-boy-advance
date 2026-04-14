@@ -11,12 +11,15 @@ struct noteSprite{
     u8 pal;
 };
 
+#define ENABLED true
+
 template <u32 N>
 class NoteManager{
     public:
         NoteManager(const Note* song_notes, u32 song_bpm) {
             this->song_notes = song_notes;
-            this->td = new textDisplay(4, 4);
+            this->streak_text = new textDisplay(4, 4, 32);
+            this->percentage_text = new textDisplay(236, 4, 48, false);
             this->note_ct = N;
             this->song_bpm = song_bpm; //minutes to seconds to frames
             this->current_tick = 0;
@@ -24,7 +27,14 @@ class NoteManager{
             this->current_note_index = 0;
             this->curr_note_lanes = 0;
             this->note_check = 0;
+            this->notes_hit = 0;
+            this->current_streak = 0;
             prepSprites();
+        }
+
+        void init(){
+            if(ENABLED) percentage_text->update(0, N);
+            if(ENABLED) streak_text->update(0);
         }
 
         int update() {
@@ -68,15 +78,15 @@ class NoteManager{
             if(current_tick >= song_notes[note_check].tick - (song_bpm * 3) && current_tick <= song_notes[note_check].tick + (song_bpm * 3)){
 
                 if(keys_hit == curr_note_lanes){
-                    td->update("Hit!");
+                    if(ENABLED) percentage_text->update(++notes_hit, N);
+                    if(ENABLED) streak_text->update(++current_streak);
                     return note_check; // Note hit successfully
-                }else{
-                    td->update("Wrong Note!");
                 }
-            } else {
-                s32 tick_diff = current_tick - song_notes[note_check].tick;
-                td->update(tick_diff < 0 ? "Early!" : "Late!");
+
             }
+            
+            current_streak = 0;
+            if(ENABLED) streak_text->update(current_streak);
             return -1;
         }
 
@@ -111,12 +121,15 @@ class NoteManager{
         
         const Note* song_notes;
         noteSprite note_sprites[N];
-        textDisplay* td;
+        textDisplay* streak_text;
+        textDisplay* percentage_text;
         u32 song_bpm;
         u32 note_ct;
         u64 current_tick;
         u32 current_frame;
         u32 current_note_index;
+        u32 current_streak;
+        u32 notes_hit;
 
         u16 curr_note_lanes;
         u32 note_check;

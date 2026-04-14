@@ -139,6 +139,7 @@ int main(){
 	init_sprites();
     // Initialize Interrupts
     irq_init(nullptr);
+	nm->init();
 
 	// Maxmod requires the vblank interrupt to reset sound DMA. 
 	irq_set( II_VBLANK, update, 0);
